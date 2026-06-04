@@ -2,6 +2,267 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ArcSwap & Liquidity Hub</title>
+    
+    <!-- PWA Primary Metadata -->
+    <meta name="theme-color" content="#ec4899">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Third-Party Web3 Core Providers -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dex: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+            --pink-accent: #ec4899;
+            --purple-accent: #a855f7;
+            --glass-panel: rgba(39, 39, 42, 0.6);
+            --border-line: rgba(255, 255, 255, 0.08);
+        }
+        
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            background: var(--bg-dex); 
+            color: #f4f4f5; 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 15px;
+        }
+        
+        .dex-container { 
+            background: var(--glass-panel); 
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px); 
+            border: 1px solid var(--border-line); 
+            width: 100%; 
+            max-width: 420px; 
+            border-radius: 28px; 
+            padding: 24px; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6); 
+        }
+        
+        .tab-headers { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            background: rgba(0,0,0,0.3); 
+            padding: 4px; 
+            border-radius: 14px; 
+            margin-bottom: 24px; 
+            border: 1px solid var(--border-line); 
+        }
+        
+        .tab-btn { 
+            background: none; 
+            border: none; 
+            color: #a1a1aa; 
+            padding: 12px; 
+            font-weight: 600; 
+            font-size: 14px; 
+            cursor: pointer; 
+            border-radius: 10px; 
+            transition: all 0.2s ease; 
+        }
+        
+        .tab-btn.active { 
+            background: rgba(255, 255, 255, 0.08); 
+            color: #fff; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
+        }
+        
+        .pane { 
+            display: none; 
+        }
+        
+        .pane.active { 
+            display: block; 
+        }
+        
+        .pool-input-box { 
+            background: rgba(9, 9, 11, 0.6); 
+            border: 1px solid var(--border-line); 
+            padding: 18px; 
+            border-radius: 18px; 
+            margin-bottom: 12px; 
+            transition: border-color 0.2s ease;
+        }
+        
+        .pool-input-box:focus-within {
+            border-color: var(--pink-accent);
+        }
+        
+        .pool-input-box label { 
+            font-size: 11px; 
+            color: #71717a; 
+            text-transform: uppercase; 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        input { 
+            background: none; 
+            border: none; 
+            color: #fff; 
+            font-size: 24px; 
+            font-weight: 700; 
+            width: 70%; 
+            outline: none; 
+        }
+        
+        /* Remove arrow utilities for input number */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .token-badge { 
+            background: rgba(255,255,255,0.08); 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 700; 
+            border: 1px solid var(--border-line); 
+            letter-spacing: 0.5px;
+        }
+        
+        .swap-arrow { 
+            text-align: center; 
+            margin: -6px 0 6px 0; 
+            font-size: 20px; 
+            color: #71717a; 
+        }
+        
+        .action-btn { 
+            width: 100%; 
+            background: linear-gradient(90deg, var(--pink-accent), var(--purple-accent)); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 16px; 
+            font-size: 16px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            margin-top: 8px; 
+            box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+        }
+        
+        .action-btn:active { 
+            transform: scale(0.98); 
+            opacity: 0.95; 
+        }
+        
+        #statusLogger { 
+            margin-top: 16px; 
+            font-size: 12px; 
+            color: #e4e4e7; 
+            background: rgba(0,0,0,0.4); 
+            padding: 14px; 
+            border-radius: 12px; 
+            display: none; 
+            line-height: 1.5; 
+            border-left: 4px solid var(--pink-accent); 
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dex-container">
+    <!-- Navigation Tabs -->
+    <div class="tab-headers">
+        <button class="tab-btn active" onclick="switchTab('swap')">Swap Token</button>
+        <button class="tab-btn" onclick="switchTab('liquidity')">Add Liquidity</button>
+    </div>
+
+    <!-- SWAP INTERFACE PANE -->
+    <div id="swapPane" class="pane active">
+        <div class="pool-input-box">
+            <label>You Pay</label>
+            <div class="row">
+                <input type="number" id="swapFromAmount" placeholder="0.0" oninput="calculateEstimate(this.value)">
+                <span class="token-badge">USDC</span>
+            </div>
+        </div>
+        
+        <div class="swap-arrow">⬇</div>
+
+        <div class="pool-input-box">
+            <label>You Receive (Estimated)</label>
+            <div class="row">
+                <input type="number" id="swapToAmount" placeholder="0.0" readonly>
+                <span class="token-badge">ARC</span>
+            </div>
+        </div>
+        <button class="action-btn" onclick="executeGaslessSwap()">Execute Gasless Swap</button>
+    </div>
+
+    <!-- LIQUIDITY INTERFACE PANE -->
+    <div id="liquidityPane" class="pane">
+        <div class="pool-input-box">
+            <label>Deposit Asset A</label>
+            <div class="row">
+                <input type="number" id="liqTokenA" placeholder="0.0">
+                <span class="token-badge">USDC</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: -4px 0 8px 0; font-size: 16px; color:#52525b;">+</div>
+        <div class="pool-input-box">
+            <label>Deposit Asset B</label>
+            <div class="row">
+                <input type="number" id="liqTokenB" placeholder="0.0">
+                <span class="token-badge">ARC</span>
+            </div>
+        </div>
+        <button class="action-btn" onclick="executeAddLiquidity()">Supply Liquidity Pool</button>
+    </div>
+
+    <!-- Real-time Transaction Monitor Logger -->
+    <div id="statusLogger"></div>
+</div>
+
+<!-- Core System Application Scripts -->
+<script src="app.js"></script>
+
+<!-- Automated Service Worker Registration for PWA Offline Engine -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('ArcSwap Service Worker Registered Successfully.', reg.scope))
+                .catch(err => console.error('Service Worker Registration Failed.', err));
+        });
+    }
+</script>
+
+</body>
+</html>
+
+
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArcSwap & Liquidity Hub</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
