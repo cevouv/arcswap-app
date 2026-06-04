@@ -31,7 +31,7 @@
         .action-btn:active { transform: scale(0.99); opacity: 0.9; }
         #statusLogger { margin-top: 16px; font-size: 12px; color: #e4e4e7; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; display: none; line-height: 1.4; border-left: 3px solid var(--pink-accent); }
     </style>
-</head>
+</head><link rel="manifest" href="manifest.json">
 <body>
 
 <div class="dex-container">
@@ -86,5 +86,9 @@
 </div>
 
 <script src="app.js"></script>
-</body>
+</body><script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
                                     </html>
